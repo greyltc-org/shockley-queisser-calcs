@@ -83,7 +83,7 @@ print("")
 I_ph = 50e-3 #photocurrent [A]
 Voc = openCircuitVoltage(I0, T_cell, I_ph)
 print("If the photocurrent is", I_ph, "amperes, then")
-print("the maximum open cirvuit voltage is", Voc, "volts.")
+print("the maximum open circuit voltage is", Voc, "volts.")
 
 i_dark = fromiter(map(functools.partial(darkCurrent, T_cell,I0), v),float)
 i_light = i_dark - I_ph
