@@ -12,6 +12,6 @@ is 1.0210416322589196e-15 amperes.
 and
 
 If the photocurrent is 0.05 amperes, then
-the maximum open cirvuit voltage is 0.820752565323 volts.
+the maximum open circuit voltage is 0.820752565323 volts.
 ```
 ![Some Graph](/figure_1.png)
