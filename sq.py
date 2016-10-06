@@ -17,8 +17,6 @@ q = 1.60217657e-19 #electron charge
 h = 6.62607004081e-34 #planck constant
 c = 299792458 #speed of light
 
-
-#E_min = 3.9733979e-20 #lower bound for energy calculation (=0.1 micron wavelength electromagnetic radiation) [J]
 E_min = 0
 E_max = 1.98637857e-18 #highest energy for absorption (=5 micron wavelength electromagnetic radiation) [J]
 
@@ -26,9 +24,11 @@ E_max = 1.98637857e-18 #highest energy for absorption (=5 micron wavelength elec
 # must return values for inputs on [E_min E_max] joules
 def a(E):
   #TODO: insert a real absorption spectrum here
-  SiBG = 1.14*q # let's assume absorption of 1 below Si's bandgap for now
-  value = SiBG - E_min
-  return value
+  if E > 1.14*q: # let's assume absorption of 1 for photons above Si's bandgap 
+    return 1
+  else:
+    return 0
+
 
 # takes energy in joules and returns emitted photon flux of a black body of temperature T
 def psi_bb(E,T):
@@ -80,7 +80,7 @@ print("")
 print("and")
 print("")
 
-I_ph = 50e-3 #photocurrent [A]
+I_ph = 60e-3 #photocurrent [A]
 Voc = openCircuitVoltage(I0, T_cell, I_ph)
 print("If the photocurrent is", I_ph, "amperes, then")
 print("the maximum open circuit voltage is", Voc, "volts.")
