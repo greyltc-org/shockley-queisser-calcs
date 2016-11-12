@@ -6,29 +6,61 @@
 # Chapter 2.2, the Shockley-Queisser limit
 
 from numpy import *
+import scipy
 import scipy.integrate as integrate
 import functools
+import csv
+import io
+import matplotlib.pyplot as plt
 
-T_cell = 29 #[degC]
-T_cell = 273.15 + T_cell # [K]
+lambd = array([]) #[nm] wavelength
+etr = array([]) #[W/(m^2*nm)]  extraterrestrial
+am15 = array([]) #[W/(m^2*nm)] AM1.5
+tot = array([]) #[W/(m^2*nm)] AM1.5
+with open('ASTMG173.csv') as csvfile:
+  stream = csv.reader(csvfile)
+  for row in stream:
+    lambd = append(lambd,float(row[0])) #[nm] wavelength
+    etr = append(etr,float(row[1])) #[W/m^2/nm] extra terrestrial radiation 
+    am15 = append(am15,float(row[2])) #[W/m^2/nm] "Global Tilt" = spectral radiation from solar disk plus sky diffuse and diffuse reflected from ground on south facing surface tilted 37 deg from horizontal
+    tot = append(tot,float(row[3])) #[W/m^2/nm] Direct + Circumsolar
+    # where Direct = Direct Normal Irradiance Nearly parallel (0.5 deg divergent cone) radiation on surface with surface normal tracking (pointing to) the sun, excluding scattered sky and reflected ground radiation
+    # and Circumsolar = Spectral irradiance within +/- 2.5 degree (5 degree diameter) field of view centered on the 0.5 deg diameter solar disk, but excluding the radiation from the disk
+csvfile.close()
 
-k = 1.3806488e-23 #boltzman constant
-q = 1.60217657e-19 #electron charge
-h = 6.62607004081e-34 #planck constant
-c = 299792458 #speed of light
+T_cell = 30 #[degC]
+#T_cell = 26.85 #[degC]
+K_offset = float_(273.15)
+T_cell = K_offset + T_cell # [K]
+
+k = 1.3806488e-23 #[J/K] boltzman constant
+q = 1.60217657e-19 #[C] or [A*s] elementary charge
+h = 6.62607004081e-34 #[m^2*kg/s]planck constant
+c = 299792458 #[m/s]speed of light
+hc = h*c #[J*m]
+hc_evnm = hc/q*1e9 #[eV*nm]
+E_solar = hc/(lambd*1e-9) #[J] x axis as joules
+eV_solar = hc_evnm/lambd #[eV] x axis as eV
+photonDensity = am15/E_solar # [photons/s/m^2/nm]
 
 E_min = 0
-E_max = 1.98637857e-18 #highest energy for absorption (=5 micron wavelength electromagnetic radiation) [J]
+E_max = max(E_solar) #highest energy for absorption (=5 micron wavelength electromagnetic radiation) [J]
 
 # takes energy in joules and returns absorption
 # must return values for inputs on [E_min E_max] joules
-def a(E):
+def a(E,E_BG=1.14*q):
   #TODO: insert a real absorption spectrum here
-  if E > 1.14*q: # let's assume absorption of 1 for photons above Si's bandgap 
-    return 1
-  else:
-    return 0
-
+  
+  # let's assume absorption of 1 for photons the bandgap
+  a_above = 1
+  return (E > E_BG) * a_above
+  
+# takes energy cutoff in joules and returns current in amps per square meter
+def current(E_cutoff):
+  cutoffi = argmax(E_cutoff>=E_solar)
+  absorptions = a(E_solar[0:cutoffi],E_BG=E_cutoff)
+  photonFlux = trapz(photonDensity[0:cutoffi]*absorptions)# [photons/s/m^2]
+  return photonFlux * q # [A/m^2]
 
 # takes energy in joules and returns emitted photon flux of a black body of temperature T
 def psi_bb(E,T):
@@ -66,34 +98,88 @@ def darkCurrent(T,I0,V):
 def openCircuitVoltage (I0,T,Iph):
   return(k*T/q)*log(Iph/I0+1)
 
-nPoints = 1000
-vMin = -0.2 #[V]
-vMax = 1 #[V]
-v = linspace(vMin,vMax,nPoints)
+# voltage at max power point
+def V_mpp (I0,T,Iph):
+  return (k*T/q)*(scipy.special.lambertw(((I0+Iph)*e)/I0)-1)
 
-I0 = radiativeSaturationCurrent(a,T_cell)
+E_BG = 1.14*q
+E_BG = 1.34*q; #[J] band gap energy
+print("We've assumed our perfect solar cell is at", T_cell, "degrees kelvin and has a band gap")
+print("of", E_BG/q, "electron volts.")
 
-print("The radiative saturation current of our solar cell")
-print("is", I0, "amperes.")
+print("")
+print("That means")
+print("")
+
+# device absorption
+aDevice = functools.partial(a, E_BG=E_BG)
+J0 = radiativeSaturationCurrent(aDevice,T_cell)
+print("its radiative saturation current density")
+print("is", J0/10, "mA/cm^2")
+
+print("")
+print("and if we shine AM1.5 illumination (as defined by ASTM G173) at it,")
+print("")
+
+J_ph = current(E_BG)
+print("its photocurrent density")
+print("is", J_ph/10, "mA/cm^2,")
+
+print("")
+print("which makes:")
+print("")
+
+Voc = openCircuitVoltage(J0, T_cell, J_ph)
+print("its open circuit voltage")
+print(Voc, "volts.")
+
+#print("")
+
+J_dark = functools.partial(darkCurrent, T_cell, J0)
+Jsc = J_dark(0) - J_ph
+#print("its short circuit current density")
+#print(J_sc/10, "mA/cm^2.")
+
+print("")
+
+Vmpp = real_if_close(V_mpp(J0,T_cell,J_ph))
+print("the voltage at its maximum power point")
+print(Vmpp, "volts.")
+
+print("")
+
+Jmpp = J_dark(Vmpp)-J_ph
+print("the current density at its maximum power point")
+print(Jmpp/10*-1, "mA/cm^2.")
+
+print("")
+
+FF = Jmpp*Vmpp/(Jsc*Voc)
+print("its fill factor")
+print(FF*100, "percent.")
 
 print("")
 print("and")
 print("")
 
-I_ph = 60e-3 #photocurrent [A]
-Voc = openCircuitVoltage(I0, T_cell, I_ph)
-print("If the photocurrent is", I_ph, "amperes, then")
-print("the maximum open circuit voltage is", Voc, "volts.")
+Pmax = Jmpp*Vmpp*-1
+print("its power conversion efficency")
+print(Pmax/10, "percent.")
 
-i_dark = fromiter(map(functools.partial(darkCurrent, T_cell,I0), v),float)
-i_light = i_dark - I_ph
+nPoints = 1000
+vMin = -0.2 #[V]
+vMax = Voc*1.2 #[V]
+v = linspace(vMin,vMax,nPoints)
 
-import matplotlib.pyplot as plt
-plt.plot(v, i_dark, v, i_light)
-plt.xlabel('Volts')
-plt.ylabel('Amperes')
-plt.title('The Current Through A Solar Cell')
-plt.legend(['In the Dark','When Illuminated'], loc='best')
-plt.ylim([-I_ph*1.1,I_ph*3])
+
+plt.plot(v, -1*J_dark(v)/10, v, -1*J_dark(v)/10+J_ph/10)
+plt.xlabel('Terminal Voltage [V]')
+plt.ylabel('Current Density [mA/cm^2]')
+buffer = io.StringIO()
+print("The Current Through A Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
+plt.title(buffer.getvalue())
+plt.legend(['In the Dark','Under AM1.5'], loc='best')
+plt.ylim([-J_ph*1.1/10,J_ph*1.1/10])
+#plt.xlim([vMin,vMax])
 plt.grid('on')
 plt.show()
