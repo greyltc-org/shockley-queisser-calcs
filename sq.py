@@ -12,6 +12,14 @@ import functools
 import csv
 import io
 import matplotlib.pyplot as plt
+import argparse
+
+parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, perfect absorption above the band gap)')
+
+parser.add_argument("--t_cell", default=30, type=float_, help="Temperature of the solar cell [deg C]")
+parser.add_argument("--band_gap", default=1.34, type=float_, help="Band gap of the solar cell [eV]")
+
+args = parser.parse_args()
 
 lambd = array([]) #[nm] wavelength
 etr = array([]) #[W/(m^2*nm)]  extraterrestrial
@@ -28,7 +36,7 @@ with open('ASTMG173.csv') as csvfile:
     # and Circumsolar = Spectral irradiance within +/- 2.5 degree (5 degree diameter) field of view centered on the 0.5 deg diameter solar disk, but excluding the radiation from the disk
 csvfile.close()
 
-T_cell = 30 #[degC]
+T_cell = args.t_cell #[degC]
 #T_cell = 26.85 #[degC]
 K_offset = float_(273.15)
 T_cell = K_offset + T_cell # [K]
@@ -102,8 +110,7 @@ def openCircuitVoltage (I0,T,Iph):
 def V_mpp (I0,T,Iph):
   return (k*T/q)*(scipy.special.lambertw(((I0+Iph)*e)/I0)-1)
 
-E_BG = 1.14*q
-E_BG = 1.34*q; #[J] band gap energy
+E_BG = args.band_gap*q; #[J] band gap energy
 print("We've assumed our perfect solar cell is at", T_cell, "degrees kelvin and has a band gap")
 print("of", E_BG/q, "electron volts.")
 
