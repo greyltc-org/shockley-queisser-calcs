@@ -5,7 +5,7 @@ Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, 
 ```bash
 $ git clone https://github.com/AFMD/shockley-queisser-calcs.git
 $ cd shockley-queisser-calcs
-$ sq.py -h
+$ ./sq.py -h
 usage: sq.py [-h] [--t_cell T_CELL] [--band_gap BAND_GAP]
 
 Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic
