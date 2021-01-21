@@ -56,7 +56,7 @@ E_max = max(E_solar) #highest energy for absorption (=5 micron wavelength electr
 
 # takes energy in joules and returns absorption
 # must return values for inputs on [E_min E_max] joules
-def a(E,E_BG=1.14*q):
+def a(E, E_BG=1.14*q):
   #TODO: insert a real absorption spectrum here
   
   # let's assume absorption of 1 for photons the bandgap
@@ -66,8 +66,8 @@ def a(E,E_BG=1.14*q):
 # takes energy cutoff in joules and returns current in amps per square meter
 def current(E_cutoff):
   cutoffi = argmax(E_cutoff>=E_solar)
-  absorptions = a(E_solar[0:cutoffi],E_BG=E_cutoff)
-  photonFlux = trapz(photonDensity[0:cutoffi]*absorptions)# [photons/s/m^2]
+  absorptions = a(E_solar[0:cutoffi], E_BG=E_cutoff)
+  photonFlux = integrate.trapezoid(photonDensity[0:cutoffi]*absorptions, lambd[0:cutoffi])# [photons/s/m^2]
   return photonFlux * q # [A/m^2]
 
 # takes energy in joules and returns emitted photon flux of a black body of temperature T
@@ -85,7 +85,7 @@ def psi_bb(E,T):
 # temperature of the solar cell [K]
 # outputs:
 # the cell's radiative saturation current [A]
-def radiativeSaturationCurrent(a,T):
+def radiativeSaturationCurrent(a, T):
   return q*integrate.quad(lambda x: a(x)*psi_bb(x,T), E_min, E_max)[0]
 
 # inputs:
@@ -103,7 +103,7 @@ def darkCurrent(T,I0,V):
 # photogenerated current [A]
 # output:
 # open circuit voltage [V]
-def openCircuitVoltage (I0,T,Iph):
+def openCircuitVoltage (I0, T, Iph):
   return(k*T/q)*log(Iph/I0+1)
 
 # voltage at max power point
@@ -120,7 +120,7 @@ print("")
 
 # device absorption
 aDevice = functools.partial(a, E_BG=E_BG)
-J0 = radiativeSaturationCurrent(aDevice,T_cell)
+J0 = radiativeSaturationCurrent(aDevice, T_cell)
 print("its radiative saturation current density")
 print("is", J0/10, "mA/cm^2")
 
@@ -171,7 +171,7 @@ print("")
 
 Pmax = Jmpp*Vmpp*-1
 print("its power conversion efficency")
-print(Pmax/10, "percent.")
+print(f"{Pmax/10} percent ({J_ph*Voc/10} if FF was 1.0).")
 
 nPoints = 1000
 vMin = -0.2 #[V]
