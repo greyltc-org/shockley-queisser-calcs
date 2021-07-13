@@ -16,8 +16,9 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, perfect absorption above the band gap)')
 
-parser.add_argument("--t_cell", default=30, type=float_, help="Temperature of the solar cell [deg C]")
-parser.add_argument("--band_gap", default=1.34, type=float_, help="Band gap of the solar cell [eV]")
+parser.add_argument("--t-cell", default=30, type=float_, help="Temperature of the solar cell [deg C]")
+parser.add_argument("--band-gap", default=1.34, type=float_, help="Band gap of the solar cell [eV]")
+parser.add_argument("--no-plot", default=False, action='store_true', help="Disable plot")
 
 args = parser.parse_args()
 
@@ -145,7 +146,7 @@ print("")
 J_dark = functools.partial(darkCurrent, T_cell, J0)
 Jsc = J_dark(0) - J_ph
 print("its short circuit current density")
-print(Jsc/10, "mA/cm^2.")
+print(Jsc/10*-1, "mA/cm^2.")
 
 print("")
 
@@ -173,20 +174,21 @@ Pmax = Jmpp*Vmpp*-1
 print("its power conversion efficency")
 print(f"{Pmax/10} percent ({J_ph*Voc/10} if FF was 1.0).")
 
-nPoints = 1000
-vMin = -0.2 #[V]
-vMax = Voc*1.2 #[V]
-v = linspace(vMin,vMax,nPoints)
+if args.no_plot == False:
+  nPoints = 1000
+  vMin = -0.2 #[V]
+  vMax = Voc*1.2 #[V]
+  v = linspace(vMin,vMax,nPoints)
 
 
-plt.plot(v, -1*J_dark(v)/10, v, -1*J_dark(v)/10+J_ph/10)
-plt.xlabel('Terminal Voltage [V]')
-plt.ylabel('Current Density [mA/cm^2]')
-buffer = io.StringIO()
-print("The Current Through A Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
-plt.title(buffer.getvalue())
-plt.legend(['In the Dark','Under AM1.5'], loc='best')
-plt.ylim([-J_ph*1.1/10,J_ph*1.1/10])
-#plt.xlim([vMin,vMax])
-plt.grid('on')
-plt.show()
+  plt.plot(v, -1*J_dark(v)/10, v, -1*J_dark(v)/10+J_ph/10)
+  plt.xlabel('Terminal Voltage [V]')
+  plt.ylabel('Current Density [mA/cm^2]')
+  buffer = io.StringIO()
+  print("The Current Through A Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
+  plt.title(buffer.getvalue())
+  plt.legend(['In the Dark','Under AM1.5'], loc='best')
+  plt.ylim([-J_ph*1.1/10,J_ph*1.1/10])
+  #plt.xlim([vMin,vMax])
+  plt.grid('on')
+  plt.show()
