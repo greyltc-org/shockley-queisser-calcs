@@ -51,4 +51,4 @@ and
 its power conversion efficency
 31.189048504159324 percent (34.96118636392688 if FF was 1.0).
 ```
-![Some Graph](/figure_1.png)
+![Some Graph](/figure_1.svg)
