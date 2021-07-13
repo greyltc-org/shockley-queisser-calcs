@@ -140,12 +140,12 @@ Voc = openCircuitVoltage(J0, T_cell, J_ph)
 print("its open circuit voltage")
 print(Voc, "volts.")
 
-#print("")
+print("")
 
 J_dark = functools.partial(darkCurrent, T_cell, J0)
 Jsc = J_dark(0) - J_ph
-#print("its short circuit current density")
-#print(J_sc/10, "mA/cm^2.")
+print("its short circuit current density")
+print(Jsc/10, "mA/cm^2.")
 
 print("")
 
