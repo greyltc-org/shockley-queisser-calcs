@@ -17,11 +17,11 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances)')
 
-parser.add_argument("--t-cell", default=70, type=np.double, help="Temperature of the solar cell [deg C]")
+parser.add_argument("--t-cell", default=25, type=np.double, help="Temperature of the solar cell [deg C]")
 parser.add_argument("--band-gap", default=1.35, type=np.double, help="Band gap of the solar cell [eV] (ignored if --device-absorption-file is given)")
 parser.add_argument("--no-plot", default=False, action='store_true', help="Disable plot")
 parser.add_argument("--solar-spectra-file", default="ASTMG173.csv", help="File to read the solar spectra from")
-parser.add_argument("--device-absorption-file", default="a.csv", help="File to read the absorption from")
+parser.add_argument("--device-absorption-file", default="", help="File to read the absorption spectrum from")
 
 args = parser.parse_args()
 
@@ -67,15 +67,20 @@ def a_gap(E, E_BG=1.14*q):
 def a_file(E, E_BG=0, E_vctr=np.array([]), a_vctr=np.array([])):
   return np.interp(E, E_vctr, a_vctr, left=0, right=0)
 
-if Path(args.device_absorption_file).is_file():
-  with open(args.solar_spectra_file) as absfile:
+daf = Path(args.device_absorption_file)
+if daf.is_file():
+  cell_type = "semi-perfect"
+  nm_abs = np.array([]) # [nm] wavelength
+  a_abs = np.array([]) # absorption/emission
+  with open(daf) as absfile:
     stream = csv.reader(absfile)
     for row in stream:
-      nm_abs = np.append(lambd,np.double(row[0])) #[nm] wavelength
-      a_abs = np.append(etr,np.double(row[1])) #[W/m^2/nm] extra terrestrial radiation
-  E_abs = hc/(nm_abs*1e-9) #[J] x axis as joules
-  a = functools.partialfunctools.partial(a_file, E_vctr=E_abs, a_vctr=a_abs)
+      nm_abs = np.append(nm_abs, np.double(row[0]))  # [nm] wavelength
+      a_abs = np.append(a_abs, np.double(row[1]))  # [W/m^2/nm] extra terrestrial radiation
+  E_abs = hc/(nm_abs*1e-9)  # [J] x axis as joules
+  a = functools.partial(a_file, E_vctr=np.flip(E_abs), a_vctr=np.flip(a_abs))
 else:
+  cell_type = "perfect"
   a = a_gap
   
 # takes energy cutoff in joules and returns current in amps per square meter
@@ -126,8 +131,11 @@ def V_mpp (I0,T,Iph):
   return (k*T/q)*(scipy.special.lambertw(((I0+Iph)*np.e)/I0)-1)
 
 E_BG = args.band_gap*q; #[J] band gap energy
-print("We've assumed our perfect solar cell is at", T_cell, "degrees kelvin and has a band gap")
-print("of", E_BG/q, "electron volts.")
+print(f"We've assumed that our {cell_type} solar cell is at", T_cell, "degrees kelvin")
+if daf.is_file():
+  print(f"and has an absorption/emission spectra given in {daf}")
+else:
+  print("and has a band gap of", E_BG/q, "electron volts.")
 
 print("")
 print("That means")
@@ -199,7 +207,10 @@ if args.no_plot == False:
   plt.xlabel('Terminal Voltage [V]')
   plt.ylabel('Current Density [mA/cm^2]')
   buffer = io.StringIO()
-  print("The Current Through A Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
+  if daf.is_file():
+    print("The Current Through A Semi-Perfect Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
+  else:
+    print("The Current Through A Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
   plt.title(buffer.getvalue())
   plt.legend(['In the Dark','Under AM1.5'], loc='best')
   plt.ylim([-J_ph*1.1/10,J_ph*1.1/10])
