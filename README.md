@@ -2,7 +2,7 @@
 Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, optionally perfect absorption above the band gap)
 
 ## Usage
-```bash
+```
 $ git clone https://github.com/AFMD/shockley-queisser-calcs.git
 $ cd shockley-queisser-calcs
 $ ./sq.py --help
