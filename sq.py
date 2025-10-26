@@ -22,6 +22,7 @@ parser.add_argument("--band-gap", default=1.35, type=np.double, help="Band gap o
 parser.add_argument("--no-plot", default=False, action='store_true', help="Disable plot")
 parser.add_argument("--solar-spectra-file", default="ASTMG173.csv", help="File to read the solar spectra from")
 parser.add_argument("--device-absorption-file", default="", help="File to read the absorption spectrum from")
+parser.add_argument("--sqcm", type=np.double, help="Set the device's area [cm^2]")
 
 args = parser.parse_args()
 
@@ -137,6 +138,18 @@ if daf.is_file():
 else:
   print("and has a band gap of", E_BG/q, "electron volts.")
 
+if args.sqcm:
+  print(f"and has an area of {args.sqcm} cm^2.")
+  density_str = ""
+  per_str = ""
+  area_str = f"{args.sqcm} cm^2 "
+  area = args.sqcm
+else:
+  density_str = " density"
+  per_str = "/cm^2"
+  area_str = f""
+  area = 1
+
 print("")
 print("That means")
 print("")
@@ -144,16 +157,16 @@ print("")
 # device absorption
 aDevice = functools.partial(a, E_BG=E_BG)
 J0 = radiativeSaturationCurrent(aDevice, T_cell)
-print("its radiative saturation current density")
-print("is", J0/10, "mA/cm^2")
+print(f"its radiative saturation current{density_str}")
+print("is", J0/10*area, f"mA{per_str}")
 
 print("")
 print("and if we shine AM1.5 illumination (as defined by ASTM G173) at it,")
 print("")
 
 J_ph = current(E_BG)
-print("its photocurrent density")
-print("is", J_ph/10, "mA/cm^2,")
+print(f"its photocurrent{density_str}")
+print("is", J_ph/10*area, f"mA{per_str},")
 
 print("")
 print("which makes:")
@@ -167,20 +180,20 @@ print("")
 
 J_dark = functools.partial(darkCurrent, T_cell, J0)
 Jsc = J_dark(0) - J_ph
-print("its short circuit current density")
-print(Jsc/10*-1, "mA/cm^2.")
+print(f"its short circuit current{density_str}")
+print(Jsc/10*-1*area, f"mA{per_str}.")
 
 print("")
 
-Vmpp = np.real_if_close(V_mpp(J0,T_cell,J_ph))
+Vmpp = np.real_if_close(V_mpp(J0, T_cell, J_ph))
 print("the voltage at its maximum power point")
 print(Vmpp, "volts.")
 
 print("")
 
 Jmpp = J_dark(Vmpp)-J_ph
-print("the current density at its maximum power point")
-print(Jmpp/10*-1, "mA/cm^2.")
+print(f"the current{density_str} at its maximum power point")
+print(Jmpp/10*-1*area, f"mA{per_str}.")
 
 print("")
 
@@ -202,18 +215,17 @@ if args.no_plot == False:
   vMax = Voc*1.2 #[V]
   v = np.linspace(vMin,vMax,nPoints)
 
-
-  plt.plot(v, -1*J_dark(v)/10, v, -1*J_dark(v)/10+J_ph/10)
+  plt.plot(v, -1*J_dark(v)/10*area, v, -1*J_dark(v)/10+J_ph/10*area)
   plt.xlabel('Terminal Voltage [V]')
-  plt.ylabel('Current Density [mA/cm^2]')
+  plt.ylabel(f'Current{density_str} [mA{per_str}]')
   buffer = io.StringIO()
   if daf.is_file():
-    print("The Current Through A Semi-Perfect Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
+    print(f"The Current Through A {area_str}Semi-Perfect Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
   else:
-    print("The Current Through A Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
+    print(f"The Current Through A {area_str}Perfect,", E_BG/q, "eV Solar Cell at",T_cell-K_offset, "deg C",file=buffer,end='')
   plt.title(buffer.getvalue())
   plt.legend(['In the Dark','Under AM1.5'], loc='best')
-  plt.ylim([-J_ph*1.1/10,J_ph*1.1/10])
+  plt.ylim([-J_ph*1.1/10*area,J_ph*1.1/10*area])
   #plt.xlim([vMin,vMax])
   plt.grid('on')
   plt.show()
