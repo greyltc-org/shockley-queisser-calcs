@@ -1,20 +1,24 @@
 # shockley-queisser-calcs
-Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, perfect absorption above the band gap)
+Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, optionally perfect absorption above the band gap)
 
 ## Usage
 ```bash
 $ git clone https://github.com/AFMD/shockley-queisser-calcs.git
 $ cd shockley-queisser-calcs
 $ ./sq.py --help
-usage: sq.py [-h] [--t-cell T_CELL] [--band-gap BAND_GAP] [--no-plot]
+usage: sq.py [-h] [--t-cell T_CELL] [--band-gap BAND_GAP] [--no-plot] [--solar-spectra-file SOLAR_SPECTRA_FILE] [--device-absorption-file DEVICE_ABSORPTION_FILE]
 
-Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, perfect absorption above the band gap)
+Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances)
 
-optional arguments:
-  -h, --help           show this help message and exit
-  --t-cell T_CELL      Temperature of the solar cell [deg C]
-  --band-gap BAND_GAP  Band gap of the solar cell [eV]
-  --no-plot            Disable plot
+options:
+  -h, --help            show this help message and exit
+  --t-cell T_CELL       Temperature of the solar cell [deg C] (default: 25)
+  --band-gap BAND_GAP   Band gap of the solar cell [eV] (ignored if --device-absorption-file is given) (default: 1.35)
+  --no-plot             Disable plot (default: False)
+  --solar-spectra-file SOLAR_SPECTRA_FILE
+                        File to read the solar spectra from (default: ASTMG173.csv)
+  --device-absorption-file DEVICE_ABSORPTION_FILE
+                        File to read the absorption spectrum from (default: )
 $ ./sq.py --t-cell 50 --band-gap 1.5 --no-plot
 We've assumed our perfect solar cell is at 323.15 degrees kelvin and has a band gap
 of 1.5 electron volts.

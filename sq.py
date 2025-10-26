@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import argparse
 from pathlib import Path
 
-parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances)')
+parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances)', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--t-cell", default=25, type=np.double, help="Temperature of the solar cell [deg C]")
 parser.add_argument("--band-gap", default=1.35, type=np.double, help="Band gap of the solar cell [eV] (ignored if --device-absorption-file is given)")
