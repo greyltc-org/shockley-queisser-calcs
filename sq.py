@@ -5,7 +5,7 @@
 # from Generalized Detailed Balance Theory of Solar Cells By Thomas Kirchartz
 # Chapter 2.2, the Shockley-Queisser limit
 
-from numpy import *
+import numpy as np
 import scipy
 import scipy.integrate as integrate
 import functools
@@ -13,33 +13,35 @@ import csv
 import io
 import matplotlib.pyplot as plt
 import argparse
+from pathlib import Path
 
-parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, perfect absorption above the band gap)')
+parser = argparse.ArgumentParser(description='Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances)')
 
-parser.add_argument("--t-cell", default=30, type=float_, help="Temperature of the solar cell [deg C]")
-parser.add_argument("--band-gap", default=1.34, type=float_, help="Band gap of the solar cell [eV]")
+parser.add_argument("--t-cell", default=70, type=np.double, help="Temperature of the solar cell [deg C]")
+parser.add_argument("--band-gap", default=1.35, type=np.double, help="Band gap of the solar cell [eV] (ignored if --device-absorption-file is given)")
 parser.add_argument("--no-plot", default=False, action='store_true', help="Disable plot")
+parser.add_argument("--solar-spectra-file", default="ASTMG173.csv", help="File to read the solar spectra from")
+parser.add_argument("--device-absorption-file", default="a.csv", help="File to read the absorption from")
 
 args = parser.parse_args()
 
-lambd = array([]) #[nm] wavelength
-etr = array([]) #[W/(m^2*nm)]  extraterrestrial
-am15 = array([]) #[W/(m^2*nm)] AM1.5
-tot = array([]) #[W/(m^2*nm)] AM1.5
-with open('ASTMG173.csv') as csvfile:
-  stream = csv.reader(csvfile)
+lambd = np.array([]) #[nm] wavelength
+etr = np.array([]) #[W/(m^2*nm)]  extraterrestrial
+am15 = np.array([]) #[W/(m^2*nm)] AM1.5
+tot = np.array([]) #[W/(m^2*nm)] AM1.5
+with open(args.solar_spectra_file) as sunfile:
+  stream = csv.reader(sunfile)
   for row in stream:
-    lambd = append(lambd,float(row[0])) #[nm] wavelength
-    etr = append(etr,float(row[1])) #[W/m^2/nm] extra terrestrial radiation 
-    am15 = append(am15,float(row[2])) #[W/m^2/nm] "Global Tilt" = spectral radiation from solar disk plus sky diffuse and diffuse reflected from ground on south facing surface tilted 37 deg from horizontal
-    tot = append(tot,float(row[3])) #[W/m^2/nm] Direct + Circumsolar
+    lambd = np.append(lambd,np.double(row[0])) #[nm] wavelength
+    etr = np.append(etr,np.double(row[1])) #[W/m^2/nm] extra terrestrial radiation 
+    am15 = np.append(am15,np.double(row[2])) #[W/m^2/nm] "Global Tilt" = spectral radiation from solar disk plus sky diffuse and diffuse reflected from ground on south facing surface tilted 37 deg from horizontal
+    tot = np.append(tot,np.double(row[3])) #[W/m^2/nm] Direct + Circumsolar
     # where Direct = Direct Normal Irradiance Nearly parallel (0.5 deg divergent cone) radiation on surface with surface normal tracking (pointing to) the sun, excluding scattered sky and reflected ground radiation
     # and Circumsolar = Spectral irradiance within +/- 2.5 degree (5 degree diameter) field of view centered on the 0.5 deg diameter solar disk, but excluding the radiation from the disk
-csvfile.close()
 
 T_cell = args.t_cell #[degC]
 #T_cell = 26.85 #[degC]
-K_offset = float_(273.15)
+K_offset = np.double(273.15)
 T_cell = K_offset + T_cell # [K]
 
 k = 1.3806488e-23 #[J/K] boltzman constant
@@ -57,23 +59,35 @@ E_max = max(E_solar) #highest energy for absorption (=5 micron wavelength electr
 
 # takes energy in joules and returns absorption
 # must return values for inputs on [E_min E_max] joules
-def a(E, E_BG=1.14*q):
-  #TODO: insert a real absorption spectrum here
-  
-  # let's assume absorption of 1 for photons the bandgap
+def a_gap(E, E_BG=1.14*q):
+  # let's assume absorption of 1 for photons above the bandgap
   a_above = 1
   return (E > E_BG) * a_above
+
+def a_file(E, E_BG=0, E_vctr=np.array([]), a_vctr=np.array([])):
+  return np.interp(E, E_vctr, a_vctr, left=0, right=0)
+
+if Path(args.device_absorption_file).is_file():
+  with open(args.solar_spectra_file) as absfile:
+    stream = csv.reader(absfile)
+    for row in stream:
+      nm_abs = np.append(lambd,np.double(row[0])) #[nm] wavelength
+      a_abs = np.append(etr,np.double(row[1])) #[W/m^2/nm] extra terrestrial radiation
+  E_abs = hc/(nm_abs*1e-9) #[J] x axis as joules
+  a = functools.partialfunctools.partial(a_file, E_vctr=E_abs, a_vctr=a_abs)
+else:
+  a = a_gap
   
 # takes energy cutoff in joules and returns current in amps per square meter
 def current(E_cutoff):
-  cutoffi = argmax(E_cutoff>=E_solar)
+  cutoffi = np.argmax(E_cutoff>=E_solar)
   absorptions = a(E_solar[0:cutoffi], E_BG=E_cutoff)
-  photonFlux = integrate.trapezoid(photonDensity[0:cutoffi]*absorptions, lambd[0:cutoffi])# [photons/s/m^2]
+  photonFlux = integrate.trapezoid(photonDensity[0:cutoffi]*absorptions, lambd[0:cutoffi])  # [photons/s/m^2]
   return photonFlux * q # [A/m^2]
 
 # takes energy in joules and returns emitted photon flux of a black body of temperature T
 def psi_bb(E,T):
-  return 2*pi*E**2/(h**3*c**2)*exp(-E/(k*T))
+  return 2*np.pi*E**2/(h**3*c**2)*np.exp(-E/(k*T))
   
 #def psi_approx(a,V,E):
 #  return a(E)*psi_bb(E)*exp(qV/(k*T))
@@ -96,7 +110,7 @@ def radiativeSaturationCurrent(a, T):
 # output:
 # current through the solar cell when it's dark [A]
 def darkCurrent(T,I0,V):
-  return I0*(exp(q*V/(k*T))-1)
+  return I0*(np.exp(q*V/(k*T))-1)
 
 # inputs:
 # radiativeSaturationCurrent [A]
@@ -105,11 +119,11 @@ def darkCurrent(T,I0,V):
 # output:
 # open circuit voltage [V]
 def openCircuitVoltage (I0, T, Iph):
-  return(k*T/q)*log(Iph/I0+1)
+  return(k*T/q)*np.log(Iph/I0+1)
 
 # voltage at max power point
 def V_mpp (I0,T,Iph):
-  return (k*T/q)*(scipy.special.lambertw(((I0+Iph)*e)/I0)-1)
+  return (k*T/q)*(scipy.special.lambertw(((I0+Iph)*np.e)/I0)-1)
 
 E_BG = args.band_gap*q; #[J] band gap energy
 print("We've assumed our perfect solar cell is at", T_cell, "degrees kelvin and has a band gap")
@@ -150,7 +164,7 @@ print(Jsc/10*-1, "mA/cm^2.")
 
 print("")
 
-Vmpp = real_if_close(V_mpp(J0,T_cell,J_ph))
+Vmpp = np.real_if_close(V_mpp(J0,T_cell,J_ph))
 print("the voltage at its maximum power point")
 print(Vmpp, "volts.")
 
@@ -178,7 +192,7 @@ if args.no_plot == False:
   nPoints = 1000
   vMin = -0.2 #[V]
   vMax = Voc*1.2 #[V]
-  v = linspace(vMin,vMax,nPoints)
+  v = np.linspace(vMin,vMax,nPoints)
 
 
   plt.plot(v, -1*J_dark(v)/10, v, -1*J_dark(v)/10+J_ph/10)
