@@ -6,7 +6,7 @@ Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances, 
 $ git clone https://github.com/AFMD/shockley-queisser-calcs.git
 $ cd shockley-queisser-calcs
 $ ./sq.py --help
-usage: sq.py [-h] [--t-cell T_CELL] [--band-gap BAND_GAP] [--no-plot] [--solar-spectra-file SOLAR_SPECTRA_FILE] [--device-absorption-file DEVICE_ABSORPTION_FILE]
+usage: sq.py [-h] [--t-cell T_CELL] [--band-gap BAND_GAP] [--no-plot] [--solar-spectra-file SOLAR_SPECTRA_FILE] [--device-absorption-file DEVICE_ABSORPTION_FILE] [--sqcm SQCM]
 
 Shockley-Queisser calcs for an ideal solar cell (n=1, no parasitic resistances)
 
@@ -19,6 +19,7 @@ options:
                         File to read the solar spectra from (default: ASTMG173.csv)
   --device-absorption-file DEVICE_ABSORPTION_FILE
                         File to read the absorption spectrum from (default: )
+  --sqcm SQCM           Set the device's area [cm^2] (default: None)
 $ ./sq.py --t-cell 50 --band-gap 1.5 --no-plot
 We've assumed our perfect solar cell is at 323.15 degrees kelvin and has a band gap
 of 1.5 electron volts.
