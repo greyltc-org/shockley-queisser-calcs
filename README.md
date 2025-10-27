@@ -21,39 +21,41 @@ options:
                         File to read the absorption spectrum from (default: )
   --sqcm SQCM           Set the device's area [cm^2] (default: None)
 $ ./sq.py --t-cell 50 --band-gap 1.5 --no-plot
-We've assumed our perfect solar cell is at 323.15 degrees kelvin and has a band gap
-of 1.5 electron volts.
+We've assumed that our perfect solar cell is at 323.15 degrees kelvin
+and has a band gap of 1.5 electron volts.
 
 That means
 
-its radiative saturation current density
-is 4.159217767932097e-18 mA/cm^2
+its radiative saturation current density is
+4.142578546268278e-18 mA/cm^2
 
-and if we shine AM1.5 illumination (as defined by ASTM G173) at it,
+and if we shine light as defined by the file ASTMG173.csv at it, then
 
-its photocurrent density
-is 28.937181142314238 mA/cm^2,
+its photocurrent density is
+28.954642177247273 mA/cm^2,
 
-which makes:
+which makes
 
 its open circuit voltage
-1.2081752604715137 volts.
+1208.303685366321 mV
 
 its short circuit current density
-28.937181142314238 mA/cm^2.
+28.954642177247273 mA/cm^2
 
 the voltage at its maximum power point
-1.1049815516988595 volts.
+1105.1068955914961 mV
 
 the current density at its maximum power point
-28.22585450065439 mA/cm^2.
+28.24296505756455 mA/cm^2
 
 its fill factor
-89.21049812068259 percent.
+89.21138363250819 percent
 
 and
 
-its power conversion efficency
-31.189048504159324 percent (34.96118636392688 if FF was 1.0).
+its power production is
+31.211495437064265 mW/cm^2 (34.986000851231 if FF was 1.0)
+or
+31.19993100874486 percent (34.97303789981322 if FF was 1.0).
 ```
 ![Some Graph](/figure_1.svg)
