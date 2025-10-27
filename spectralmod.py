@@ -7,16 +7,39 @@ import argparse
 import fileinput
 import sys
 
-parser = argparse.ArgumentParser(description='A tool to manipulate parts of a spectrum. Reads from sdtin, writes to stdout', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(
+    description="A tool to manipulate parts of a spectrum. Reads from sdtin, writes to stdout",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
 
-parser.add_argument("-i", "--input", type=str, default='-', help="Input file (defaults to stdin)")
-parser.add_argument("-b", "--begin", type=float, required=True, help="Scale range start (inclusive)")
-parser.add_argument("-e", "--end", type=float, required=True, help="Scale range end (inclusive)")
+parser.add_argument(
+    "-i", "--input", type=str, default="-", help="Input file (defaults to stdin)"
+)
+parser.add_argument(
+    "-b", "--begin", type=float, required=True, help="Scale range start (inclusive)"
+)
+parser.add_argument(
+    "-e", "--end", type=float, required=True, help="Scale range end (inclusive)"
+)
 parser.add_argument("-f", "--scale-factor", type=float, default=1, help="Scale factor")
 parser.add_argument("-o", "--offset", type=float, default=0, help="Offset")
-parser.add_argument("-t", "--tsv", default=False, action='store_true', help="Output in tsv instead of csv")
-parser.add_argument("-j", "--just", default=False, action='store_true', help="Just output the rescaled column")
-parser.add_argument("--col", default=2, type=int, help="Column of interest in input file")
+parser.add_argument(
+    "-t",
+    "--tsv",
+    default=False,
+    action="store_true",
+    help="Output in tsv instead of csv",
+)
+parser.add_argument(
+    "-j",
+    "--just",
+    default=False,
+    action="store_true",
+    help="Just output the rescaled column",
+)
+parser.add_argument(
+    "--col", default=2, type=int, help="Column of interest in input file"
+)
 
 args = parser.parse_args()
 
